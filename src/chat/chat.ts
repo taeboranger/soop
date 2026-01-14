@@ -1,7 +1,7 @@
 import WebSocket, {MessageEvent} from "ws"
 import {DEFAULT_BASE_URLS} from "../const"
 import {SoopClient} from "../client"
-import {ChatDelimiter, ChatType, Events, SoopChatOptions, SoopChatOptionsWithClient} from "./types"
+import {ChatDelimiter, ChatType, Events, SoopChatOptions, SoopChatOptionsWithClient, UserType} from "./types"
 import {Cookie, LiveDetail} from "../api"
 import {createSecureContext, SecureContextOptions} from "tls"
 import {Agent} from "https"
@@ -248,8 +248,21 @@ export class SoopChat {
 
     private parseChat(packet: string) {
         const parts = packet.split(ChatDelimiter.SEPARATOR);
-        const [, comment, userId, , , , username] = parts;
-        return {userId: userId, comment: comment, username: username};
+        const [, comment, userId, , , , username, flags_str] = parts;
+        const flags = flags_str.split("|").map(flag => Number(flag));
+        const isSubscriber: boolean = ((flags[1] & 262144) | (flags[1] & 524288) | (flags[1] & 1048576)) !== 0;
+        let userType: UserType|null = null;
+
+        const UserTypeValues = Object.values(UserType).filter(
+            (v): v is number => typeof v === "number"
+        );
+
+        for(const value of UserTypeValues) {
+            if (typeof value === "number") {
+                if((userType & value) === value) userType = UserType[UserType[value]];
+            }
+        }
+        return {userId: userId, comment: comment, username: username, isSubscriber: isSubscriber, userType: userType};
     }
 
     private parseMessageType(packet: string): string {

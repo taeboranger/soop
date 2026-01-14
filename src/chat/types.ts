@@ -40,6 +40,13 @@ export enum ChatType {
     // UNKNOWN = "0094",
 }
 
+export enum UserType {
+    BJ = 4,
+    MANAGER = 256,
+    TOPFAN = 32768,
+    FAN = 32
+}
+
 export interface Events {
     connect: ConnectResponse
     enterChatRoom: EnterChatRoomResponse
